@@ -95,6 +95,7 @@ import re
 import pypsa
 from pypsa.linopf import (get_var, define_constraints, linexpr, join_exprs,
                           network_lopf, ilopf)
+from pypsa.contingency import add_contingency_constraints_lowmem as add_SC_constraints
 from pathlib import Path
 from vresutils.benchmark import memory_logger
 
@@ -133,6 +134,44 @@ def prepare_network(n, solve_opts):
         nhours = solve_opts['nhours']
         n.set_snapshots(n.snapshots[:nhours])
         n.snapshot_weightings[:] = 8760./nhours
+
+    return n
+
+
+def prepare_SC_constraints(n):
+    """
+    Separate one parallel line in each corridor for which we consider the outage.
+    Special handling for 220kV lines lifted to 380kV.
+    """
+
+    def create_outage_lines(n, condition, num_parallel):
+        lines_out = n.lines.loc[condition].copy()
+        lines_out.s_nom = lines_out.s_nom * num_parallel / lines_out.num_parallel
+        lines_out.num_parallel = num_parallel
+        lines_out.index = [f"{i}_outage" for i in lines_out.index]
+        return lines_out
+
+    def adjust_nonoutage_lines(n, condition, num_parallel):
+        nump = n.lines.loc[condition, "num_parallel"]
+        n.lines.loc[condition, "s_nom"] *= (nump - num_parallel) / nump
+        n.lines.loc[condition, "num_parallel"] -= num_parallel
+
+    cond_220 = (n.lines.num_parallel > 0.5) & (n.lines.num_parallel < 1)
+    cond_380 = n.lines.num_parallel > 1
+
+    lines_out_220 = create_outage_lines(n, cond_220, 1 / 3)
+    lines_out_380 = create_outage_lines(n, cond_380, 1.0)
+
+    adjust_nonoutage_lines(n, cond_220, 1 / 3)
+    adjust_nonoutage_lines(n, cond_380, 1)
+
+    n.lines = pd.concat([n.lines, lines_out_220, lines_out_380])
+
+    n.calculate_dependent_values()
+
+    n._branch_outages = n.lines.loc[
+        (n.lines.num_parallel <= 0.5) | (n.lines.num_parallel == 1)
+    ].index
 
     return n
 
@@ -241,6 +280,8 @@ def extra_functionality(n, snapshots):
     if 'CCL' in opts and n.generators.p_nom_extendable.any():
         add_CCL_constraints(n, config)
     for o in opts:
+        if o == 'SC':
+            add_SC_constraints(n, snapshots)
         if "EQ" in o:
             add_EQ_constraints(n, o)
     add_battery_constraints(n)
@@ -286,6 +327,9 @@ if __name__ == "__main__":
                        interval=30.) as mem:
         n = pypsa.Network(snakemake.input[0])
         n = prepare_network(n, solve_opts)
+        for o in opts:
+            if o == "SC":
+                n = prepare_SC_constraints(n)
         n = solve_network(n, config=snakemake.config, solver_dir=tmpdir,
                           solver_log=snakemake.log.solver, opts=opts)
         n.export_to_netcdf(snakemake.output[0])
