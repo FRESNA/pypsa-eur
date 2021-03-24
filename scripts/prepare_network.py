@@ -66,6 +66,8 @@ from six import iteritems
 
 from add_electricity import load_costs, update_transmission_costs
 
+from _helpers import get_country
+
 idx = pd.IndexSlice
 
 logger = logging.getLogger(__name__)
@@ -73,10 +75,28 @@ logger = logging.getLogger(__name__)
 
 def add_co2limit(n, Nyears=1., factor=None):
 
-    if factor is not None:
-        annual_emissions = factor*snakemake.config['electricity']['co2base']
+    if snakemake.config['co2emissions'].get('absolute_limit') and factor is None:
+        print('abs')
+        annual_emissions = snakemake.config['co2emissions']['absolute_limit']
+
+    elif snakemake.config['co2emissions'].get('relative_limit_base') and factor is not None:
+        print('rel')
+        annual_emissions = factor * snakemake.config['co2emissions']['relative_limit_base']
+
+    elif snakemake.config['co2emissions'].get('infer_base') and factor is not None:
+        print('infer')
+        co2 = pd.read_excel(snakemake.input.emissions, header=7, index_col=3)
+        base = (co2.loc[
+            co2['ISO_A3'].isin([get_country('alpha_3', alpha_2=c) for c in snakemake.config['countries']]) &
+            (co2['IPCC'] == snakemake.config['co2emissions']['infer_base'].get('category', '1A1a')), 
+            snakemake.config['co2emissions']['infer_base'].get('year', 1990)
+        ].sum() * 1e3)
+        annual_emissions = factor * base
+        print(base)
+        print(annual_emissions)
+    
     else:
-        annual_emissions = snakemake.config['electricity']['co2limit']
+        logger.error("Emission reduction targets not properly defined!")
 
     n.add("GlobalConstraint", "CO2Limit",
           carrier_attribute="co2_emissions", sense="<=",

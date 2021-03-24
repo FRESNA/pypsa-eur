@@ -22,7 +22,6 @@ Relevant Settings
         marginal_cost:
         capital_cost:
         conventional_carriers:
-        co2limit:
         extendable_carriers:
         include_renewable_capacities_from_OPSD:
         estimate_renewable_capacities_from_capacity_stats:

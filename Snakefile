@@ -278,7 +278,10 @@ rule add_extra_components:
 
 
 rule prepare_network:
-    input: 'networks/elec_s{simpl}_{clusters}_ec.nc', tech_costs=COSTS
+    input:
+        network='networks/elec_s{simpl}_{clusters}_ec.nc',
+        tech_costs=COSTS,
+        emissions="data/bunde/v432_CO2_excl_short-cycle_org_C_1970_2012.xls"
     output: 'networks/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}.nc'
     log: "logs/prepare_network/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}.log"
     benchmark: "benchmarks/prepare_network/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}"

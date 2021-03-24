@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import pandas as pd
+import numpy as np
 from pathlib import Path
 
 
@@ -90,6 +91,15 @@ def load_network(import_name=None, custom_components=None):
                          override_components=override_components,
                          override_component_attrs=override_component_attrs)
 
+
+import pycountry as pyc
+
+def get_country(target, **keys):
+    assert len(keys) == 1
+    try:
+        return getattr(pyc.countries.get(**keys), target)
+    except (KeyError, AttributeError):
+        return np.nan
 
 def pdbcast(v, h):
     return pd.DataFrame(v.values.reshape((-1, 1)) * h.values,
