@@ -15,6 +15,7 @@ ATLITE_NPROCESSES = config['atlite'].get('nprocesses', 4)
 
 
 wildcard_constraints:
+    year="[0-9]*",
     simpl="[a-zA-Z0-9]*|all",
     clusters="[0-9]+m?|all",
     ll="(v|c)([0-9\.]+|opt|all)|all",
@@ -22,19 +23,19 @@ wildcard_constraints:
 
 
 rule cluster_all_networks:
-    input: expand("networks/elec_s{simpl}_{clusters}.nc", **config['scenario'])
+    input: expand("networks/elec{year}_s{simpl}_{clusters}.nc", **config['scenario'])
 
 
 rule extra_components_all_networks:
-    input: expand("networks/elec_s{simpl}_{clusters}_ec.nc", **config['scenario'])
+    input: expand("networks/elec{year}_s{simpl}_{clusters}_ec.nc", **config['scenario'])
 
 
 rule prepare_all_networks:
-    input: expand("networks/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}.nc", **config['scenario'])
+    input: expand("networks/elec{year}_s{simpl}_{clusters}_ec_l{ll}_{opts}.nc", **config['scenario'])
 
 
 rule solve_all_networks:
-    input: expand("results/networks/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}.nc", **config['scenario'])
+    input: expand("results/networks/elec{year}_s{simpl}_{clusters}_ec_l{ll}_{opts}.nc", **config['scenario'])
 
 
 if config['enable'].get('prepare_links_p_nom', False):
@@ -46,11 +47,12 @@ if config['enable'].get('prepare_links_p_nom', False):
         script: 'scripts/prepare_links_p_nom.py'
 
 
-datafiles = ['ch_cantons.csv', 'je-e-21.03.02.xls', 
-            'eez/World_EEZ_v8_2014.shp', 'EIA_hydro_generation_2000_2014.csv', 
-            'hydro_capacities.csv', 'naturalearth/ne_10m_admin_0_countries.shp', 
-            'NUTS_2013_60M_SH/data/NUTS_RG_60M_2013.shp', 'nama_10r_3popgdp.tsv.gz', 
+datafiles = ['ch_cantons.csv', 'je-e-21.03.02.xls',
+            'eez/World_EEZ_v8_2014.shp', 'EIA_hydro_generation_2000_2014.csv',
+            'hydro_capacities.csv', 'naturalearth/ne_10m_admin_0_countries.shp',
+            'NUTS_2013_60M_SH/data/NUTS_RG_60M_2013.shp', 'nama_10r_3popgdp.tsv.gz',
             'nama_10r_3gdp.tsv.gz', 'corine/g250_clc06_V18_5.tif']
+
 
 
 if not config.get('tutorial', False):
@@ -68,7 +70,7 @@ rule build_load_data:
     output: "resources/load.csv"
     log: "logs/build_load_data.log"
     script: 'scripts/build_load_data.py'
-    
+
 
 rule build_powerplants:
     input:
@@ -170,6 +172,8 @@ if config['enable'].get('retrieve_natura_raster', True):
         script: 'scripts/retrieve_natura_raster.py'
 
 
+ruleorder: build_hydro_profile > build_renewable_profiles
+
 rule build_renewable_profiles:
     input:
         base_network="networks/base.nc",
@@ -185,9 +189,9 @@ rule build_renewable_profiles:
                            else "resources/regions_offshore.geojson"),
         cutout=lambda w: "cutouts/" + config["renewable"][w.technology]['cutout']
     output:
-        profile="resources/profile_{technology}.nc",
-    log: "logs/build_renewable_profile_{technology}.log"
-    benchmark: "benchmarks/build_renewable_profiles_{technology}"
+        profile="resources/profile{year}_{technology}.nc",
+    log: "logs/build_renewable_profile{year}_{technology}.log"
+    benchmark: "benchmarks/build_renewable_profiles{year}_{technology}"
     threads: ATLITE_NPROCESSES
     resources: mem=ATLITE_NPROCESSES * 5000
     script: "scripts/build_renewable_profiles.py"
@@ -199,8 +203,8 @@ if 'hydro' in config['renewable'].keys():
             country_shapes='resources/country_shapes.geojson',
             eia_hydro_generation='data/bundle/EIA_hydro_generation_2000_2014.csv',
             cutout="cutouts/" + config["renewable"]['hydro']['cutout']
-        output: 'resources/profile_hydro.nc'
-        log: "logs/build_hydro_profile.log"
+        output: 'resources/profile{year}_hydro.nc'
+        log: "logs/build_hydro_profile{year}.log"
         resources: mem=5000
         script: 'scripts/build_hydro_profile.py'
 
@@ -215,11 +219,11 @@ rule add_electricity:
         geth_hydro_capacities='data/geth2015_hydro_capacities.csv',
         load='resources/load.csv',
         nuts3_shapes='resources/nuts3_shapes.geojson',
-        **{f"profile_{tech}": f"resources/profile_{tech}.nc"
+        **{f"profile_{tech}": "resources/profile{year}_" + f"{tech}.nc"
            for tech in config['renewable']}
-    output: "networks/elec.nc"
-    log: "logs/add_electricity.log"
-    benchmark: "benchmarks/add_electricity"
+    output: "networks/elec{year}.nc"
+    log: "logs/add_electricity{year}.log"
+    benchmark: "benchmarks/add_electricity{year}"
     threads: 1
     resources: mem=3000
     script: "scripts/add_electricity.py"
@@ -227,17 +231,17 @@ rule add_electricity:
 
 rule simplify_network:
     input:
-        network='networks/elec.nc',
+        network='networks/elec{year}.nc',
         tech_costs=COSTS,
         regions_onshore="resources/regions_onshore.geojson",
         regions_offshore="resources/regions_offshore.geojson"
     output:
-        network='networks/elec_s{simpl}.nc',
-        regions_onshore="resources/regions_onshore_elec_s{simpl}.geojson",
-        regions_offshore="resources/regions_offshore_elec_s{simpl}.geojson",
-        busmap='resources/busmap_elec_s{simpl}.csv'
-    log: "logs/simplify_network/elec_s{simpl}.log"
-    benchmark: "benchmarks/simplify_network/elec_s{simpl}"
+        network='networks/elec{year}_s{simpl}.nc',
+        regions_onshore="resources/regions_onshore_elec{year}_s{simpl}.geojson",
+        regions_offshore="resources/regions_offshore_elec{year}_s{simpl}.geojson",
+        busmap='resources/busmap_elec{year}_s{simpl}.csv'
+    log: "logs/simplify_network/elec{year}_s{simpl}.log"
+    benchmark: "benchmarks/simplify_network/elec{year}_s{simpl}"
     threads: 1
     resources: mem=4000
     script: "scripts/simplify_network.py"
@@ -245,21 +249,19 @@ rule simplify_network:
 
 rule cluster_network:
     input:
-        network='networks/elec_s{simpl}.nc',
-        regions_onshore="resources/regions_onshore_elec_s{simpl}.geojson",
-        regions_offshore="resources/regions_offshore_elec_s{simpl}.geojson",
-        busmap=ancient('resources/busmap_elec_s{simpl}.csv'),
-        custom_busmap=("data/custom_busmap_elec_s{simpl}_{clusters}.csv"
-                       if config["enable"].get("custom_busmap", False) else []),
+        network='networks/elec{year}_s{simpl}.nc',
+        regions_onshore="resources/regions_onshore_elec{year}_s{simpl}.geojson",
+        regions_offshore="resources/regions_offshore_elec{year}_s{simpl}.geojson",
+        busmap=ancient('resources/busmap_elec{year}_s{simpl}.csv'),
         tech_costs=COSTS
     output:
-        network='networks/elec_s{simpl}_{clusters}.nc',
-        regions_onshore="resources/regions_onshore_elec_s{simpl}_{clusters}.geojson",
-        regions_offshore="resources/regions_offshore_elec_s{simpl}_{clusters}.geojson",
-        busmap="resources/busmap_elec_s{simpl}_{clusters}.csv",
-        linemap="resources/linemap_elec_s{simpl}_{clusters}.csv"
-    log: "logs/cluster_network/elec_s{simpl}_{clusters}.log"
-    benchmark: "benchmarks/cluster_network/elec_s{simpl}_{clusters}"
+        network='networks/elec{year}_s{simpl}_{clusters}.nc',
+        regions_onshore="resources/regions_onshore_elec{year}_s{simpl}_{clusters}.geojson",
+        regions_offshore="resources/regions_offshore_elec{year}_s{simpl}_{clusters}.geojson",
+        busmap="resources/busmap_elec{year}_s{simpl}_{clusters}.csv",
+        linemap="resources/linemap_elec{year}_s{simpl}_{clusters}.csv"
+    log: "logs/cluster_network/elec{year}_s{simpl}_{clusters}.log"
+    benchmark: "benchmarks/cluster_network/elec{year}_s{simpl}_{clusters}"
     threads: 1
     resources: mem=3000
     script: "scripts/cluster_network.py"
@@ -267,23 +269,23 @@ rule cluster_network:
 
 rule add_extra_components:
     input:
-        network='networks/elec_s{simpl}_{clusters}.nc',
+        network='networks/elec{year}_s{simpl}_{clusters}.nc',
         tech_costs=COSTS,
-    output: 'networks/elec_s{simpl}_{clusters}_ec.nc'
-    log: "logs/add_extra_components/elec_s{simpl}_{clusters}.log"
-    benchmark: "benchmarks/add_extra_components/elec_s{simpl}_{clusters}_ec"
+    output: 'networks/elec{year}_s{simpl}_{clusters}_ec.nc'
+    log: "logs/add_extra_components/elec{year}_s{simpl}_{clusters}.log"
+    benchmark: "benchmarks/add_extra_components/elec{year}_s{simpl}_{clusters}_ec"
     threads: 1
     resources: mem=3000
     script: "scripts/add_extra_components.py"
 
 
 rule prepare_network:
-    input: 'networks/elec_s{simpl}_{clusters}_ec.nc', tech_costs=COSTS
-    output: 'networks/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}.nc'
-    log: "logs/prepare_network/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}.log"
-    benchmark: "benchmarks/prepare_network/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}"
+    input: 'networks/elec{year}_s{simpl}_{clusters}_ec.nc', tech_costs=COSTS
+    output: 'networks/elec{year}_s{simpl}_{clusters}_ec_l{ll}_{opts}.nc'
+    log: "logs/prepare_network/elec{year}_s{simpl}_{clusters}_ec_l{ll}_{opts}.log"
+    benchmark: "benchmarks/prepare_network/elec{year}_s{simpl}_{clusters}_ec_l{ll}_{opts}"
     threads: 1
-    resources: mem=4000
+    resources: mem=1000
     script: "scripts/prepare_network.py"
 
 
@@ -306,13 +308,13 @@ def memory(w):
 
 
 rule solve_network:
-    input: "networks/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}.nc"
-    output: "results/networks/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}.nc"
+    input: "networks/elec{year}_s{simpl}_{clusters}_ec_l{ll}_{opts}.nc"
+    output: "results/networks/elec{year}_s{simpl}_{clusters}_ec_l{ll}_{opts}.nc"
     log:
-        solver=normpath("logs/solve_network/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_solver.log"),
-        python="logs/solve_network/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_python.log",
-        memory="logs/solve_network/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_memory.log"
-    benchmark: "benchmarks/solve_network/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}"
+        solver=normpath("logs/solve_network/elec{year}_s{simpl}_{clusters}_ec_l{ll}_{opts}_solver.log"),
+        python="logs/solve_network/elec{year}_s{simpl}_{clusters}_ec_l{ll}_{opts}_python.log",
+        memory="logs/solve_network/elec{year}_s{simpl}_{clusters}_ec_l{ll}_{opts}_memory.log"
+    benchmark: "benchmarks/solve_network/elec{year}_s{simpl}_{clusters}_ec_l{ll}_{opts}"
     threads: 4
     resources: mem=memory
     shadow: "shallow"
@@ -321,14 +323,14 @@ rule solve_network:
 
 rule solve_operations_network:
     input:
-        unprepared="networks/elec_s{simpl}_{clusters}_ec.nc",
-        optimized="results/networks/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}.nc"
-    output: "results/networks/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_op.nc"
+        unprepared="networks/elec{year}_s{simpl}_{clusters}_ec.nc",
+        optimized="results/networks/elec{year}_s{simpl}_{clusters}_ec_l{ll}_{opts}.nc"
+    output: "results/networks/elec{year}_s{simpl}_{clusters}_ec_l{ll}_{opts}_op.nc"
     log:
-        solver=normpath("logs/solve_operations_network/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_op_solver.log"),
-        python="logs/solve_operations_network/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_op_python.log",
-        memory="logs/solve_operations_network/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_op_memory.log"
-    benchmark: "benchmarks/solve_operations_network/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}"
+        solver=normpath("logs/solve_operations_network/elec{year}_s{simpl}_{clusters}_ec_l{ll}_{opts}_op_solver.log"),
+        python="logs/solve_operations_network/elec{year}_s{simpl}_{clusters}_ec_l{ll}_{opts}_op_python.log",
+        memory="logs/solve_operations_network/elec{year}_s{simpl}_{clusters}_ec_l{ll}_{opts}_op_memory.log"
+    benchmark: "benchmarks/solve_operations_network/elec{year}_s{simpl}_{clusters}_ec_l{ll}_{opts}"
     threads: 4
     resources: mem=(lambda w: 5000 + 372 * int(w.clusters))
     shadow: "shallow"
@@ -337,12 +339,12 @@ rule solve_operations_network:
 
 rule plot_network:
     input:
-        network="results/networks/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}.nc",
+        network="results/networks/elec{year}_s{simpl}_{clusters}_ec_l{ll}_{opts}.nc",
         tech_costs=COSTS
     output:
-        only_map="results/plots/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_{attr}.{ext}",
-        ext="results/plots/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_{attr}_ext.{ext}"
-    log: "logs/plot_network/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_{attr}_{ext}.log"
+        only_map="results/plots/elec{year}_s{simpl}_{clusters}_ec_l{ll}_{opts}_{attr}.{ext}",
+        ext="results/plots/elec{year}_s{simpl}_{clusters}_ec_l{ll}_{opts}_{attr}_ext.{ext}"
+    log: "logs/plot_network/elec{year}_s{simpl}_{clusters}_ec_l{ll}_{opts}_{attr}_{ext}.log"
     script: "scripts/plot_network.py"
 
 
@@ -355,7 +357,7 @@ def input_make_summary(w):
     else:
         ll = w.ll
     return ([COSTS] +
-            expand("results/networks/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}.nc",
+            expand("results/networks/elec{year}_s{simpl}_{clusters}_ec_l{ll}_{opts}.nc",
                    network=w.network,
                    ll=ll,
                    **{k: config["scenario"][k] if getattr(w, k) == "all" else getattr(w, k)
@@ -364,28 +366,28 @@ def input_make_summary(w):
 
 rule make_summary:
     input: input_make_summary
-    output: directory("results/summaries/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_{country}")
-    log: "logs/make_summary/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_{country}.log",
+    output: directory("results/summaries/elec{year}_s{simpl}_{clusters}_ec_l{ll}_{opts}_{country}")
+    log: "logs/make_summary/elec{year}_s{simpl}_{clusters}_ec_l{ll}_{opts}_{country}.log",
     script: "scripts/make_summary.py"
 
 
 rule plot_summary:
-    input: "results/summaries/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_{country}"
-    output: "results/plots/summary_{summary}_elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_{country}.{ext}"
-    log: "logs/plot_summary/{summary}_elec_s{simpl}_{clusters}_ec_l{ll}_{opts}_{country}_{ext}.log"
+    input: "results/summaries/elec{year}_s{simpl}_{clusters}_ec_l{ll}_{opts}_{country}"
+    output: "results/plots/{year}/summary_{summary}_elec{year}_s{simpl}_{clusters}_ec_l{ll}_{opts}_{country}.{ext}"
+    log: "logs/plot_summary/{summary}_elec{year}_s{simpl}_{clusters}_ec_l{ll}_{opts}_{country}_{ext}.log"
     script: "scripts/plot_summary.py"
 
 
 def input_plot_p_nom_max(w):
-    return [("networks/elec_s{simpl}{maybe_cluster}.nc"
+    return [("networks/elec{year}_s{simpl}{maybe_cluster}.nc"
              .format(maybe_cluster=('' if c == 'full' else ('_' + c)), **w))
             for c in w.clusts.split(",")]
 
 
 rule plot_p_nom_max:
     input: input_plot_p_nom_max
-    output: "results/plots/elec_s{simpl}_cum_p_nom_max_{clusts}_{techs}_{country}.{ext}"
-    log: "logs/plot_p_nom_max/elec_s{simpl}_{clusts}_{techs}_{country}_{ext}.log"
+    output: "results/plots/elec{year}_s{simpl}_cum_p_nom_max_{clusts}_{techs}_{country}.{ext}"
+    log: "logs/plot_p_nom_max/elec{year}_s{simpl}_{clusts}_{techs}_{country}_{ext}.log"
     script: "scripts/plot_p_nom_max.py"
 
 

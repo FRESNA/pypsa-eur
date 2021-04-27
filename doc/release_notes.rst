@@ -13,7 +13,7 @@ Upcoming Release
 
 * Fix: Value for ``co2base`` in ``config.yaml`` adjusted to 1.487e9 t CO2-eq (from 3.1e9 t CO2-eq). The new value represents emissions related to the electricity sector for EU+UK. The old value was ~2x too high and used when the emissions wildcard in ``{opts}`` was used.
 
-* Add option to include marginal costs of links representing fuel cells, electrolysis, and battery inverters 
+* Add option to include marginal costs of links representing fuel cells, electrolysis, and battery inverters
   [`#232 <https://github.com/PyPSA/pypsa-eur/pull/232>`_].
 
 PyPSA-Eur 0.3.0 (7th December 2020)
@@ -26,7 +26,7 @@ Using the ``{opts}`` wildcard for scenarios:
 * An option is introduced which adds constraints such that each country or node produces on average a minimal share of its total consumption itself.
   For example ``EQ0.5c`` set in the ``{opts}`` wildcard requires each country to produce on average at least 50% of its consumption. Additionally,
   the option ``ATK`` requires autarky at each node and removes all means of power transmission through lines and links. ``ATKc`` only removes
-  cross-border transfer capacities. 
+  cross-border transfer capacities.
   [`#166 <https://github.com/PyPSA/pypsa-eur/pull/166>`_].
 
 * Added an option to alter the capital cost (``c``) or installable potentials (``p``) of carriers by a factor via ``carrier+{c,p}factor`` in the ``{opts}`` wildcard.
@@ -112,7 +112,7 @@ Other:
   [`#191 <https://github.com/PyPSA/pypsa-eur/pull/191>`_].
 
 * Raise a warning if ``tech_colors`` in the config are not defined for all carriers
-  [`#178 <https://github.com/PyPSA/pypsa-eur/pull/178>`_]. 
+  [`#178 <https://github.com/PyPSA/pypsa-eur/pull/178>`_].
 
 
 PyPSA-Eur 0.2.0 (8th June 2020)

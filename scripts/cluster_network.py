@@ -31,28 +31,28 @@ Relevant Settings
 Inputs
 ------
 
-- ``resources/regions_onshore_elec_s{simpl}.geojson``: confer :ref:`simplify`
-- ``resources/regions_offshore_elec_s{simpl}.geojson``: confer :ref:`simplify`
-- ``resources/busmap_elec_s{simpl}.csv``: confer :ref:`simplify`
-- ``networks/elec_s{simpl}.nc``: confer :ref:`simplify`
-- ``data/custom_busmap_elec_s{simpl}_{clusters}.csv``: optional input
+- ``resources/regions_onshore_elec{year}_s{simpl}.geojson``: confer :ref:`simplify`
+- ``resources/regions_offshore_elec{year}_s{simpl}.geojson``: confer :ref:`simplify`
+- ``networks/elec{year}_s{simpl}.nc``: confer :ref:`simplify`
+- ``resources/busmap_elec{year}_s{simpl}.csv``: confer :ref:`simplify`
+- ``data/custom_busmap_elec{year}_s{simpl}_{clusters}.csv``: optional input
 
 Outputs
 -------
 
-- ``resources/regions_onshore_elec_s{simpl}_{clusters}.geojson``:
+- ``resources/regions_onshore_elec{year}_s{simpl}_{clusters}.geojson``:
 
     .. image:: ../img/regions_onshore_elec_s_X.png
         :scale: 33 %
 
-- ``resources/regions_offshore_elec_s{simpl}_{clusters}.geojson``:
+- ``resources/regions_offshore_elec{year}_s{simpl}_{clusters}.geojson``:
 
     .. image:: ../img/regions_offshore_elec_s_X.png
         :scale: 33 %
 
-- ``resources/busmap_elec_s{simpl}_{clusters}.csv``: Mapping of buses from ``networks/elec_s{simpl}.nc`` to ``networks/elec_s{simpl}_{clusters}.nc``;
-- ``resources/linemap_elec_s{simpl}_{clusters}.csv``: Mapping of lines from ``networks/elec_s{simpl}.nc`` to ``networks/elec_s{simpl}_{clusters}.nc``;
-- ``networks/elec_s{simpl}_{clusters}.nc``:
+- ``resources/busmap_elec{year}_s{simpl}_{clusters}.csv``: Mapping of buses from ``networks/elec_s{simpl}.nc`` to ``networks/elec_s{simpl}_{clusters}.nc``;
+- ``resources/linemap{year}_elec_s{simpl}_{clusters}.csv``: Mapping of lines from ``networks/elec_s{simpl}.nc`` to ``networks/elec_s{simpl}_{clusters}.nc``;
+- ``networks/elec{year}_s{simpl}_{clusters}.nc``:
 
     .. image:: ../img/elec_s_X.png
         :scale: 40  %

@@ -38,12 +38,12 @@ Inputs
 ------
 
 - ``data/costs.csv``: The database of cost assumptions for all included technologies for specific years from various sources; e.g. discount rate, lifetime, investment (CAPEX), fixed operation and maintenance (FOM), variable operation and maintenance (VOM), fuel costs, efficiency, carbon-dioxide intensity.
-- ``networks/elec_s{simpl}_{clusters}.nc``: confer :ref:`cluster`
+- ``networks/elec{year}_s{simpl}_{clusters}.nc``: confer :ref:`cluster`
 
 Outputs
 -------
 
-- ``networks/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}.nc``: Complete PyPSA network that will be handed to the ``solve_network`` rule.
+- ``networks/elec{year}_s{simpl}_{clusters}_ec_l{ll}_{opts}.nc``: Complete PyPSA network that will be handed to the ``solve_network`` rule.
 
 Description
 -----------
@@ -164,7 +164,7 @@ def apply_time_segmentation(n, segments):
 
     load_norm = n.loads_t.p_set.max()
     load = n.loads_t.p_set / load_norm
-    
+
     inflow_norm = n.storage_units_t.inflow.max()
     inflow = n.storage_units_t.inflow / inflow_norm
 
@@ -184,7 +184,7 @@ def apply_time_segmentation(n, segments):
 
     n.set_snapshots(pd.DatetimeIndex(snapshots, name='name'))
     n.snapshot_weightings = pd.Series(weightings, index=snapshots, name="weightings", dtype="float64")
-    
+
     segmented.index = snapshots
     n.generators_t.p_max_pu = segmented[n.generators_t.p_max_pu.columns] * p_max_pu_norm
     n.loads_t.p_set = segmented[n.loads_t.p_set.columns] * load_norm

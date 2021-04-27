@@ -11,8 +11,6 @@ Relevant Settings
 
 .. code:: yaml
 
-    snapshots:
-
     countries:
 
     electricity:
@@ -35,7 +33,7 @@ Relevant Settings
 
 .. seealso::
     Documentation of the configuration file ``config.yaml`` at
-    :ref:`snapshots_cf`, :ref:`toplevel_cf`, :ref:`electricity_cf`, :ref:`load_cf`,
+    :ref:`toplevel_cf`, :ref:`electricity_cf`, :ref:`load_cf`,
     :ref:`lines_cf`, :ref:`links_cf`, :ref:`transformers_cf`
 
 Inputs

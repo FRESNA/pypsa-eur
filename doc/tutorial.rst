@@ -119,8 +119,8 @@ orders ``snakemake`` to run the script ``solve_network`` that produces the solve
 .. code::
 
     rule solve_network:
-        input: "networks/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}.nc"
-        output: "results/networks/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}.nc"
+        input: "networks/elec{year}_s{simpl}_{clusters}_ec_l{ll}_{opts}.nc"
+        output: "results/networks/elec{year}_s{simpl}_{clusters}_ec_l{ll}_{opts}.nc"
         [...]
         script: "scripts/solve_network.py"
 
