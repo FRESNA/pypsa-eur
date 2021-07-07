@@ -26,6 +26,11 @@ Upcoming Release
 * Bugfix in :mod:`build_renewable_profile` where offshore wind profiles could no longer be created [`#249 <https://github.com/PyPSA/pypsa-eur/pull/249>`_].
 * Bugfix: Lower expansion limit of extendable carriers is now set to the existing capacity, i.e. ``p_nom_min = p_nom`` (0 before). Simultaneously, the upper limit (``p_nom_max``) is now the maximum of the installed capacity (``p_nom``) and the previous estimate based on land availability (``p_nom_max``) [`#260 <https://github.com/PyPSA/pypsa-eur/pull/260>`_].
 
+* Techno-economic parameters of technologies (e.g. costs and efficiencies) will now be retrieved from a separate repository `PyPSA/technology-data <https://github.com/pypsa/technology-data>`_ 
+  that collects assumptions from a variety of sources. It is activated by default with ``enable: retrieve_cost_data: true`` and controlled with ``costs: year:`` and ``costs: version:``. 
+  The location of this data changed from ``data/costs.csv`` to ``resources/costs.csv`` 
+  [`#184 <https://github.com/PyPSA/pypsa-eur/pull/184>`_].
+
 PyPSA-Eur 0.3.0 (7th December 2020)
 ==================================
 

@@ -13,9 +13,8 @@ if not exists("config.yaml"):
 
 configfile: "config.yaml"
 
-COSTS="data/costs.csv"
+COSTS="resources/costs.csv"
 ATLITE_NPROCESSES = config['atlite'].get('nprocesses', 4)
-
 
 wildcard_constraints:
     simpl="[a-zA-Z0-9]*|all",
@@ -71,7 +70,6 @@ rule build_load_data:
     output: "resources/load.csv"
     log: "logs/build_load_data.log"
     script: 'scripts/build_load_data.py'
-    
 
 rule build_powerplants:
     input:
@@ -174,6 +172,14 @@ if config['enable'].get('retrieve_natura_raster', True):
         output: "resources/natura.tiff"
         shell: "mv {input} {output}"
 
+if config['enable'].get('retrieve_cost_data', True):
+    rule retrieve_cost_data:
+        params:
+            year = config['costs']['year'],
+            version = config['costs']['version'],
+        input: HTTP.remote("raw.githubusercontent.com/PyPSA/technology-data/{params.version}/outputs/costs_{params.year}.csv", keep_local=True)
+        output: COSTS
+        shell: 'mv {input} {output}'
 
 rule build_renewable_profiles:
     input:
